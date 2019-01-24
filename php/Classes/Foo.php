@@ -44,24 +44,29 @@ class author{
 	private $authorUsername;
 
 	/**
-	 * constructor for this author
+	 * constructor for author
 	 *
 	 * @param Uuid $newAuthorId id of this author
+	 * @param string $newAuthorActivationToken
 	 * @param string $newAuthorAvatarUrl the url for the author's chosen avatar photo
 	 * @param string $newAuthorEmail this author's email address
+	 * @param $newAuthorHash author's password hash
 	 * @param string $newAuthorUsername this author's username
-	 * @throws \UnexpectedValueException if data type is not valid
 	 * @throws \InvalidArgumentException if data is not valid
+	 * @throws \RangeException if data is out of bounds
+	 * @throws \TypeError if data type violates a hint
+	 * @throws \Exception if non defined exception occurs
 	 **/
-	public function __construct($newAuthorId, $newAuthorAvatarUrl, $newAuthorEmail, $newAuthorUsername) {
+	public function __construct($newAuthorId, ?string $newAuthorActivationToken, string $newAuthorAvatarUrl,
+										 string $newAuthorEmail, $newAuthorHash, string $newAuthorUsername) {
 		try {
 			$this->setAuthorId($newAuthorId);
+			$this->setAuthorActivationToken($newAuthorActivationToken);
 			$this->setAuthorAvatarUrl($newAuthorAvatarUrl);
 			$this->setAuthorEmail($newAuthorEmail);
+			$this->setAuthorHash($newAuthorHash);
 			$this->setAuthorUsername($newAuthorUsername);
-		}
-
-		catch(InvalidArgumentException) {
+		} catch(\InvalidArgumentException | \RangeException | \Exception | \TypeError $exception) {
 			$exceptionType = get_class($exception);
 			throw(new $exceptionType($exception->getMessage(), 0, $exception));
 		}
@@ -204,11 +209,11 @@ class author{
 	 * @throws \RangeException if $newAuthorHash is not 128 characters
 	 * @throws \TypeError if $newAuthorHash is not a string
 	 */
-	public function setNewAuthorHash($newAuthorHash) {
+	public function setAuthorHash($newAuthorHash) {
 		//make sure the hash is formatted correctly
 		$newAuthorHash = trim($newAuthorHash);
 		if(empty($newAuthorHash) === true) {
-			throw(new\InvalidArgumentException("password hash is empty or insecure"))
+			throw(new\InvalidArgumentException("password hash is empty or insecure"));
 		}
 		//enforce argon hash
 		$authorHashInfo = password_get_info($newAuthorHash);
