@@ -1,5 +1,5 @@
 <?php
-//namespace tsmith179\object-oriented-project;
+namespace TaylorSmith\objectOrientedProject;
 
 //require_once("autoload.php");
 //require_once(dirname(__DIR__, 2) . "/vendor/autoload.php");
