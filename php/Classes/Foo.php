@@ -1,8 +1,8 @@
 <?php
 namespace TaylorSmith\objectOrientedProject;
 
-//require_once("autoload.php");
-//require_once(dirname(__DIR__, 2) . "/vendor/autoload.php");
+require_once("autoload.php");
+require_once(dirname(__DIR__, 2) . "/vendor/autoload.php");
 
 /**
  * Basic type of profile for a social networking site.
