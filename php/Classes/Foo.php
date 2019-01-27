@@ -13,7 +13,7 @@ use Ramsey\Uuid\Uuid;
  *
  * @author Taylor Smith <taylorleesmith92@gmail.com>
  **/
-class author{
+class author implements \JsonSerializable {
 	/**
 	 * id for this author; this is the primary key
 	 * @var Uuid $authorId
@@ -73,7 +73,6 @@ class author{
 			throw(new $exceptionType($exception->getMessage(), 0, $exception));
 		}
 	}
-
 	/**
 	 * accessor method for author Id
 	 *
@@ -100,7 +99,6 @@ class author{
 		//convert and store new author id
 		$this->authorId = $uuid;
 	}
-
 	/**
 	 * accessor method for author activation token
 	 *
@@ -133,7 +131,6 @@ class author{
 		//save the activation token
 		$this->authorActivationToken = $newAuthorActivationToken;
 	}
-
 	/**
 	 * accessor method for the author's avatar photo url
 	 *
@@ -163,7 +160,6 @@ class author{
 		//store new url
 		$this->authorAvatarUrl = $newAuthorAvatarUrl;
 	}
-
 	/**
 	 * accessor method for author's email
 	 *
@@ -259,5 +255,79 @@ class author{
 		}
 		//store username
 		$this->authorUsername = $newAuthorUsername;
+	}
+
+	/**
+	 * inserts this author into mySQL
+	 *
+	 * @param \PDO $pdo PDO connection object
+	 * @throws \PDOException when ySQL errors occur
+	 * @throws \TypeError when $pdo is not a PDO connection object
+	 **/
+	public function insert(\PDO $pdo) : void {
+		//create query template
+		$query = "INSERT INTO author(authorId, authorActivationToken, authorAvatarUrl, authorEmail, authorHash, authorUsername) VALUES(:authorId, :authorActivationToken, :authorAvatarUrl, :authorEmail, :authorHash, :authorUsername)";
+		$statement = $pdo->prepare($query);
+		//bind the member variables to the place holder in the template
+		$parameters = ["authorId" => $this->authorId->getBytes(), "authorActivationToken" => $this->authorActivationToken, "authorAvatarUrl" => $this->authorAvatrUrl, "authorEmail" => $this->authorEmail, "authorHash" => $this->authorHash, "authorUsername" => $this->authorUsername];
+		$statement->execute($parameters);
+	}
+
+	/**
+	 * deletes this author from mySQL
+	 *
+	 * @param \PDO $pdo PDO connection object
+	 * @throws \PDOException when ySQL errors occur
+	 * @throws \TypeError when $pdo is not a PDO connection object
+	 **/
+	public function delete(\PDO $pdo) : void {
+		//create query template
+		$query = "DELETE FROM author WHERE authorId = :authorId";
+		$statement = $pdo->prepare($query);
+		//bind the member variables to the placeholder in the template
+		$parameters = ["authorId" => $this->authorId->getBytes()];
+		$statement->execute($parameters);
+	}
+
+	/**
+	 * updates author in mySQL
+	 *
+	 * @param \PDO $pdo PDO connection object
+	 * @throws \PDOException when mySQL errors occur
+	 * @throws \TypeError when $pdo is not a PDO connection object
+	 **/
+	public function update(\PDO $pdo) : void {
+		//create query template
+		$query = "UPDATE author SET authorActivationToken = :authorActivationToken, authorAvatarUrl = :authorAvatarUrl, authorEmail = :authorEmail, authorHash = :authorHash, authorUsername = :authorUsername WHERE authorId = :authorId";
+		$statement = $pdo->prepare($query);
+		//bind the member variables to the placeholder in the template
+		$parameters = ["authorId" => $this->authorId->getBytes(), "authorActivationToken" => $this->authorActivationToken, "authorAvatarUrl" => $this->authorAvatarUrl, "authorEmail" => $this->authorEmail, "authorHash" => $this->authorHash, "authorUsername" => $this->authorUsername];
+		$statement->execute($parameters);
+	}
+
+	/**
+	 * gets Author by authorId
+	 *
+	 * @param \PDO $pdo PDO connection object
+	 * @param Uuid|string $authorId author id to search for
+	 * @return Author|null Author found or null if not found
+	 * @throws \PDOException when mySQL errors occur
+	 * @throws \TypeError if a variable type is not correct
+	 **/
+	public function getAuthorByAuthorId(\PDO $pdo, $authorId) : ?Author {
+		//sanitize author id before search
+		try {
+			$authorId = self::validateUuid($authorId);
+		} catch(\InvalidArgumentException | \RangeException | \Exception | \TypeError $exception) {
+			throw(new \PDOException($exception->getMessage(), 0, $exception));
+		}
+		//crete query template
+		$query = "SELECT authorId, authorEmail, authorUsername FROM author WHERE authorId = :authorId";
+		$statement = $pdo->prepare($query);
+		//bind the author id to the placeholder in the template
+		$parameters = ["authorId" => $authorId->getBytes()];
+		$statement->execute($parameters);
+		//grab author from mySQL
+
 	}
 }
