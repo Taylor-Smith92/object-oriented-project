@@ -14,6 +14,7 @@ use Ramsey\Uuid\Uuid;
  * @author Taylor Smith <taylorleesmith92@gmail.com>
  **/
 class author implements \JsonSerializable {
+	use ValidateUuid;
 	/**
 	 * id for this author; this is the primary key
 	 * @var Uuid $authorId
@@ -256,7 +257,6 @@ class author implements \JsonSerializable {
 		//store username
 		$this->authorUsername = $newAuthorUsername;
 	}
-
 	/**
 	 * inserts this author into mySQL
 	 *
@@ -269,10 +269,9 @@ class author implements \JsonSerializable {
 		$query = "INSERT INTO author(authorId, authorActivationToken, authorAvatarUrl, authorEmail, authorHash, authorUsername) VALUES(:authorId, :authorActivationToken, :authorAvatarUrl, :authorEmail, :authorHash, :authorUsername)";
 		$statement = $pdo->prepare($query);
 		//bind the member variables to the place holder in the template
-		$parameters = ["authorId" => $this->authorId->getBytes(), "authorActivationToken" => $this->authorActivationToken, "authorAvatarUrl" => $this->authorAvatrUrl, "authorEmail" => $this->authorEmail, "authorHash" => $this->authorHash, "authorUsername" => $this->authorUsername];
+		$parameters = ["authorId" => $this->authorId->getBytes(), "authorActivationToken" => $this->authorActivationToken, "authorAvatarUrl" => $this->authorAvatarUrl, "authorEmail" => $this->authorEmail, "authorHash" => $this->authorHash, "authorUsername" => $this->authorUsername];
 		$statement->execute($parameters);
 	}
-
 	/**
 	 * deletes this author from mySQL
 	 *
@@ -288,7 +287,6 @@ class author implements \JsonSerializable {
 		$parameters = ["authorId" => $this->authorId->getBytes()];
 		$statement->execute($parameters);
 	}
-
 	/**
 	 * updates author in mySQL
 	 *
@@ -304,7 +302,6 @@ class author implements \JsonSerializable {
 		$parameters = ["authorId" => $this->authorId->getBytes(), "authorActivationToken" => $this->authorActivationToken, "authorAvatarUrl" => $this->authorAvatarUrl, "authorEmail" => $this->authorEmail, "authorHash" => $this->authorHash, "authorUsername" => $this->authorUsername];
 		$statement->execute($parameters);
 	}
-
 	/**
 	 * gets Author by authorId
 	 *
@@ -328,6 +325,94 @@ class author implements \JsonSerializable {
 		$parameters = ["authorId" => $authorId->getBytes()];
 		$statement->execute($parameters);
 		//grab author from mySQL
+		try {
+			$author = null;
+			$statement->setFetchMode(\PDO::FETCH_ASSOC);
+			$row = $statement->fetch();
+			if($row !== false) {
+				$author = new Author($row["authorId"], $row["authorEmail"], $row["authorUsername"]);
+			}
+		} catch(\Exception $exception) {
+			// if the row could not be converted properly
+			throw(new \PDOException($exception->getMessage(), 0, $exception));
+		}
+		return ($author);
+	}
+	/**
+	 * gets Author by username
+	 *
+	 * @param \PDO $pdo PDO connection object
+	 * @param string $authorUsername username to search for
+	 * @return \SplFixedArray SplFixedArray of authors found
+	 * @throws \PDOException when mySQL errors occur
+	 * @throws \TypeError when variables are not the correct data type
+	 **/
+	public static function getAuthorByAuthorUsername(\PDO $pdo, string $authorUsername) {
+		// sanitize username before search
+		$authorUsername = trim($authorUsername);
+		$authorUsername = filter_var($authorUsername, FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
+		if(empty($authorUsername) === true) {
+			throw(new \PDOException("username is invalid"));
+		}
+		//escape any mySQL wildcards
+		$authorUsername = str_replace("_", "\\_", str_replace("%", "\\%", $authorUsername));
+		//create query template
+		$query = "SELECT authorId, authorUsername, authorAvatarUrl FROM author WHERE authorUsername LIKE :authorUsername";
+		$statement = $pdo->prepare($query);
+		//bind the username to the placeholder in the template
+		$authorUsername = "%$authorUsername%";
+		$parameters = ["authorUsername" => $authorUsername];
+		$statement->execute($parameters);
+		//build an array of users
+		$authors = new \SplFixedArray($statement->rowCount());
+		$statement->setFetchMode(\PDO::FETCH_ASSOC);
+		while(($row = $statement->fetch()) !== false) {
+			try {
+				$author = new Author($row["authorId"], $row["authorUsername"], $row["authorAvatarUrl"]);
+				$authors[$authors->key()] = $author;
+				$authors->next();
+			} catch(\Exception $exception) {
+				//if the row couldn't be converted, rethrow it
+				throw(new \PDOException($exception->getMessage(), 0, $exception));
+			}
+		}
+		return ($authors);
+	}
 
+	/**
+	 * gets all authors
+	 *
+	 * @param \PDO $pdo PDO connection object
+	 * @return \SplFixedArray SplFixedArray of authors found or null if not found
+	 * @throws \PDOException when mySQL errors occur
+	 * @throws \TypeError when variables are not the correct data type
+	 **/
+	public static function getAllAuthors(\PDO $pdo) : \SplFixedArray {
+		//create query template
+		$query = "SELECT authorId, authorUsername, authorAvatarUrl FROM author";
+		$statement = $pdo->prepare($query);
+		$statement->execute();
+		//build array of authors
+		$authors = new \SplFixedArray($statement->rowCount());
+		$statement->setFetchMode(\PDO::FETCH_ASSOC);
+		while(($row = $statement->fetch()) !== false) {
+			try {
+				$author = new Author($row["authorId"], $row["authorUsername"], $row["authorAvatarUrl"]);
+				$authors[$authors->key()] = $author;
+				$authors->next();
+			} catch(\Exception $exception) {
+				//if the row could not be converted, rethrow it
+				throw(new \PDOException($exception->getMessage(), 0, $exception));
+			}
+		}
+		return ($authors);
+	}
+
+	public function jsonSerialize() : array {
+		$fields = get_object_vars($this);
+
+		$fields["authorId"] = $this->authorId->toString();
+
+		return ($fields);
 	}
 }
