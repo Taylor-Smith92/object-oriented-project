@@ -13,7 +13,7 @@ use Ramsey\Uuid\Uuid;
  *
  * @author Taylor Smith <taylorleesmith92@gmail.com>
  **/
-class author implements \JsonSerializable {
+class Author implements \JsonSerializable {
 	use ValidateUuid;
 	/**
 	 * id for this author; this is the primary key
@@ -21,15 +21,15 @@ class author implements \JsonSerializable {
 	 **/
 	private $authorId;
 	/**
-	 * url for this author's avatar photo
-	 * @var $authorAvatarUrl
-	 **/
-	private $authorAvatarUrl;
-	/**
 	 * token used to verify that the author is valid
 	 * @var $authorActivationToken
 	 */
 	private $authorActivationToken;
+	/**
+	 * url for this author's avatar photo
+	 * @var $authorAvatarUrl
+	 **/
+	private $authorAvatarUrl;
 	/**
 	 * this author's email address
 	 * @var $authorEmail
@@ -211,6 +211,7 @@ class author implements \JsonSerializable {
 	public function setAuthorHash($newAuthorHash) {
 		//make sure the hash is formatted correctly
 		$newAuthorHash = trim($newAuthorHash);
+		$newAuthorHash = password_hash($newAuthorHash, PASSWORD_ARGON2I, ["time_cost" => 384]);
 		if(empty($newAuthorHash) === true) {
 			throw(new\InvalidArgumentException("password hash is empty or insecure"));
 		}

@@ -1,4 +1,4 @@
-/**create table author(
+create table author(
 authorId binary(16) not null,
 authorActivationToken char(32),
 authorAvatarUrl varchar(255),
@@ -10,4 +10,4 @@ unique(authorUsername),
 INDEX(authorEmail),
 primary key(authorId)
 );
-**/
+
